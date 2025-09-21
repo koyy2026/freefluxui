@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generator</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, button { width: 100%; padding: 10px; box-sizing: border-box; }
+        button { cursor: pointer; }
+        #result img { max-width: 100%; margin-top: 20px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>AI Image Generator</h1>
+
+    <div class="input-group">
+        <label for="model-select">Model</label>
+        <select id="model-select">
+            <option value="flux.1-schnell">flux.1-schnell</option>
+            <option value="flux.1-dev">flux.1-dev</option>
+            <option value="flux.1-krea-dev">flux.1-krea-dev</option>
+            <option value="flux.1.1-pro">flux.1.1-pro</option>
+            <option value="flux.1-kontext-pro">flux.1-kontext-pro</option>
+        </select>
+    </div>
+
+    <!-- 新增：圖片大小選擇 -->
+    <div class="input-group">
+        <label for="size-select">Aspect Ratio</label>
+        <select id="size-select">
+            <option value="1024x1024">Square (1:1)</option>
+            <option value="1792x1024">Landscape (16:9)</option>
+            <option value="1024x1792">Portrait (9:16)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label for="prompt-input">Prompt</label>
+        <input type="text" id="prompt-input" placeholder="e.g., A cute cat wearing a wizard hat">
+    </div>
+
+    <button id="generate-btn">Generate Image</button>
+    <div id="result"><p>Your generated image will appear here...</p></div>
+
+    <script>
+        const modelSelect = document.getElementById('model-select');
+        const sizeSelect = document.getElementById('size-select'); // 獲取大小選擇元素
+        const promptInput = document.getElementById('prompt-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const resultDiv = document.getElementById('result');
+
+        generateBtn.addEventListener('click', async () => {
+            const model = modelSelect.value;
+            const size = sizeSelect.value; // 獲取選擇的大小
+            const prompt = promptInput.value;
+
+            if (!prompt) {
+                alert('Please enter a prompt.');
+                return;
+            }
+
+            resultDiv.innerHTML = '<p>Generating, please wait...</p>';
+            generateBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: model,
+                        prompt: prompt,
+                        size: size // 將大小參數加入請求中
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate image');
+                }
+
+                const data = await response.json();
+                resultDiv.innerHTML = `<img src="${data.imageUrl}" alt="Generated Image">`;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
